@@ -1,15 +1,123 @@
 classDiagram
-    %% Replace the placeholders below with your actual classes, attributes, methods, and relationships.
-    %% Keep this file updated so it matches your final implementation.
+    %% PawPal+ — Pet Activity Scheduling System
+    %% Synced with the Python stubs in pawpal/ (enums.py, models.py, scheduler.py).
+    %% Owners register pets, schedule activities, view upcoming schedules,
+    %% and modify or cancel appointments.
 
-    class ClassName {
-        +type attribute
-        +method() returnType
+    class Owner {
+        +str owner_id
+        +str name
+        +str email
+        +Optional~Preferences~ preferences
+        +List~Pet~ pets
+        +register_pet(pet: Pet) None
+        +add_pet(name: str, species: str) Pet
+        +list_pets() List~Pet~
     }
 
-    class AnotherClass {
-        +type attribute
-        +method() returnType
+    class Pet {
+        +str pet_id
+        +str name
+        +str species
+        +int age
+        +Optional~Schedule~ schedule
+        +schedule_activity(activity: Activity) Appointment
+        +upcoming_activities() List~Appointment~
     }
 
-    ClassName --> AnotherClass : relationship
+    class Preferences {
+        +time preferred_start
+        +time preferred_end
+        +int max_daily_minutes
+        +List~str~ blackout_times
+    }
+
+    class Activity {
+        <<abstract>>
+        +str activity_id
+        +str title
+        +int duration_minutes
+        +Priority priority
+        +bool recurring
+        +describe()* str
+    }
+
+    class Walk {
+        +str route
+        +float distance_km
+        +describe() str
+    }
+
+    class Grooming {
+        +str groomer
+        +bool bath_included
+        +describe() str
+    }
+
+    class VetVisit {
+        +str clinic
+        +str reason
+        +describe() str
+    }
+
+    class Training {
+        +str skill
+        +str trainer
+        +describe() str
+    }
+
+    class Appointment {
+        +str appointment_id
+        +Activity activity
+        +datetime start_time
+        +Status status
+        +reschedule(new_time: datetime) None
+        +cancel() None
+        +is_upcoming() bool
+    }
+
+    class Schedule {
+        +str schedule_id
+        +date date
+        +List~Appointment~ appointments
+        +add(appointment: Appointment) None
+        +remove(appointment_id: str) None
+        +upcoming() List~Appointment~
+        +has_conflict(appointment: Appointment) bool
+    }
+
+    class Scheduler {
+        +generate_plan(pet: Pet, activities: List~Activity~, prefs: Preferences) Schedule
+        +sort_by_priority(activities: List~Activity~) List~Activity~
+        +resolve_conflicts(schedule: Schedule) Schedule
+        +explain(schedule: Schedule) str
+    }
+
+    class Priority {
+        <<enumeration>>
+        LOW
+        MEDIUM
+        HIGH
+    }
+
+    class Status {
+        <<enumeration>>
+        SCHEDULED
+        COMPLETED
+        CANCELLED
+    }
+
+    Activity <|-- Walk
+    Activity <|-- Grooming
+    Activity <|-- VetVisit
+    Activity <|-- Training
+
+    Owner "1" o-- "many" Pet : owns
+    Owner "1" *-- "0..1" Preferences : has
+    Pet "1" *-- "0..1" Schedule : has
+    Schedule "1" o-- "many" Appointment : contains
+    Appointment "1" --> "1" Activity : for
+    Appointment ..> Status : uses
+    Activity ..> Priority : uses
+    Scheduler ..> Schedule : builds
+    Scheduler ..> Preferences : reads
